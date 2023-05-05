@@ -3,10 +3,6 @@ rocket = {
     length: 3.5,
 	mass: 100,
     ratio: 6,
-	pressure: 0.3, // Porcentaje de distancia desde centro de masa a extremo de propulsor
-	cd: 0.005,
-	cl: 0,
-
     draw: function(ss) {
         push()
         translate(...ss.slice(0,3))
@@ -23,22 +19,21 @@ rocket = {
 }
 
 var ui = {}
+var ss = Array(12).fill(0)
+var tt = [1500, math.pi/2, 0]
 var pam
-var ss = [
-	0, 0, rocket.length/2,
-	-100, 0, 100,
-	0, 0, 0,
-	...Quaternion.fromEuler(0, -math.pi/4*3, 0, "ZYX").toVector()]
 
 function setup() {
 	createCanvas(1280, 720, WEBGL)
 	poslabel = createDiv("x: , y: , z:")
 	poslabel.position(400, 10)
+	wlabel = createDiv("x: , y: , z:")
+	wlabel.position(400, 30)
 	tex = loadImage("Prototype Blue.png")
 	vars = [
 		["x", 0], ["y", 0], ["z", 3.5],
 		["vx", -225], ["vy", 0], ["vz", 225],
-		["wx", 0], ["wy", 0], ["wz", 0],
+		["wx", 0], ["wy", -0.04], ["wz", 0],
 		["yaw", 0], ["pitch", "-math.pi/4*3"], ["roll", 0],
 	]
 	vars.forEach((v, i) => {
@@ -52,7 +47,7 @@ function setup() {
 			label : t,
 			input : inp
 		}
-	});
+	})
 	reset()
 }
 
@@ -72,13 +67,7 @@ function reset() {
 		rocket.mass,						// Masa del cohete [kg]
 		9.81,								// Aceleración gravitacional [m/s2]
 		rocket.length,						// Largo de cohete [m]
-		3.6, 103, 103,						// Inercias principales
-		0.0001, 0,							// Coeficientes aerodinámicos roce y sustentación
-		math.pi * rocket.radius**2,			// Area referencia fuerza de roce [m2] 
-		rocket.length * rocket.radius*2,	// Area referencia fuerza de sustentación [m2]
-		1.2754,								// Densidad del aire [kg/m3]
-		-rocket.length/2,					// Posición del propulsor [m]
-		-rocket.length/2*(rocket.pressure)]	// Posición del centro de presión [m]
+		3.6, 103, 103]						// Inercias principales
 }	
 
 function keyReleased(ev) {
@@ -87,20 +76,31 @@ function keyReleased(ev) {
 	}
 }
 
-
-tt = [0, 0, 0]
-
-air = [0, 0, 0, 0, 0, 0]
-
 function update() {
+	// Controles propulsor
+	if (keyIsDown(20)) {
+		tt[0] = 1500
+	} else {
+		tt[0] = 0
+	}
+	a = math.pi/4
+	b = 0
+	c = 0
+	if (keyIsDown(87)) {b = -1}
+	if (keyIsDown(83)) {b = 1}
+	if (keyIsDown(65)) {c = -1}
+	if (keyIsDown(68)) {c = 1}
+	if (b == 0 && c == 0) {
+		tt[1] = 0
+	} else {
+		tt[1] = math.pi/4
+	}
+	tt[2] = Math.atan2(b, c) + math.pi/4
 	// Metodo de euler
 	if (ss[2] > 0) {
 		h = 1/60
 		v = ss.slice(3,6)
-		D = v.some(i => i !== 0) ? drag(...ss.concat(pam)) : [0,0,0]
-		L = v.some(i => i !== 0) ? lift(...ss.concat(pam)) : [0,0,0]
-		air = D.concat(L)
-		ss = math.add(ss, math.multiply(h, sys(...ss.concat(tt,pam,air))))
+		ss = math.add(ss, math.multiply(h, sys(...ss.concat(tt,pam))))
 		ss.splice(9, 13, ...Quaternion(...ss.slice(9,13)).normalize().toVector())
 	}
 }
@@ -112,6 +112,7 @@ function draw() {
 	qprop = Quaternion.fromEuler(tt[2] + math.pi/2, tt[1], 0, "XYZ")
 	r = ss.slice(0,3)
 	v = ss.slice(3,6)
+	w = ss.slice(6,9)
 	// Configuración de la escena
 	textureWrap(REPEAT)
 	strokeWeight(3)
@@ -151,24 +152,17 @@ function draw() {
 	heading = q.rotateVector([1, 0, 0])
 	propulsor = math.unaryMinus(q.mul(qprop).rotateVector([1, 0, 0]))
 	arrow(
-		math.add(r, math.multiply(heading, pam[11])),
+		math.add(r, math.multiply(heading, -rocket.length/2)),
 		math.multiply(propulsor, tt[0]/500))
 	
-	arrow(
-		math.add(r, math.multiply(heading, pam[12])),
-		math.multiply(air.slice(0, 3), 1/500), [255, 0, 0]
-	)
-	arrow(
-		math.add(r, math.multiply(heading, pam[12])),
-		math.multiply(air.slice(3, 6), 1/500), [0, 0, 255]
-	)
 	arrow(
 		r,
 		[0, 0, -rocket.mass*pam[1]/500], [255, 165, 0	]
 	)
 	// Cohete
     rocket.draw(ss)
-	poslabel.html("x: " + math.floor(r[0]) + " y: " + math.floor(r[1]) + " z: " + math.floor(r[2])) 
 	// Coordenadas
+	poslabel.html("x: " + math.floor(r[0]) + " y: " + math.floor(r[1]) + " z: " + math.floor(r[2]))
+	wlabel.html("wx: " + w[0] + "<br>wy: " + w[1] + "<br>wz: " + w[2])
 	pop()
 }
