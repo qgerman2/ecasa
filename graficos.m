@@ -65,8 +65,31 @@ xlabel("Tiempo [s]", "Interpreter","latex")
 ylabel("Angulo [rad]", "Interpreter","latex")
 legend("location", "northeast", "Interpreter","latex")
 
+m = 100;
+Ix = 3.6;
+Iy = 103;
+Iz = 103;
+g = 9.81;
+
+Ke = 1/2*m*(vx.^2+vy.^2+vz.^2) + 1/2*(Ix*wx.^2+Iy*wy.^2+Iz*wz.^2);
+Pe = m*g*z;
+Te = Ke+Pe;
+
+f6 = figure(6);
+title("Energía")
+f6.Position(3:4) = [500, 200];
+hold on
+plot(t, Te, "DisplayName", "$Total$", LineWidth=1)
+plot(t, Ke, "DisplayName", "$Cinetica$", LineWidth=1)
+plot(t, Pe, "DisplayName", "$Potencial$", LineWidth=1)
+grid on
+xlabel("Tiempo [s]", "Interpreter","latex")
+ylabel("Energia [J]", "Interpreter","latex")
+legend("location", "east", "Interpreter","latex")
+
 exportgraphics(f1, "1pos.emf")
 exportgraphics(f2, "2vel.emf")
 exportgraphics(f3, "3velangbod.emf")
 exportgraphics(f4, "4velangine.emf")
 exportgraphics(f5, "5velanginecuat.emf")
+exportgraphics(f6, "6energia.emf")
