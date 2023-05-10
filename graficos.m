@@ -38,7 +38,7 @@ ylim([-0.1, 0.1])
 legend("location", "northeast", "Interpreter","latex")
 
 f4 = figure(4);
-title("Velocidad angular Inertial-frame")
+title("Orientación Inertial-frame")
 f4.Position(3:4) = [500, 200];
 hold on
 plot(t, q0, "DisplayName", "$q_0$", LineWidth=1)
